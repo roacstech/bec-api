@@ -1,0 +1,4 @@
+{
+    "prettier.withNodeModules": false,
+    "laraphense.excludeNamespaces": "**/node_modules/**"
+}

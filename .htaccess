@@ -1,0 +1,4 @@
+DirectoryIndex disabled
+RewriteEngine On
+RewriteRule ^(.*)$ http://localhost:6178/$1 [P,L]
+RewriteRule ^$ http://localhost:6178/ [P,L]
