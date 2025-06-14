@@ -51,8 +51,8 @@ Thumbs.db
 *.wmv
 
 # Environment Variables
-# .env
-# .env.*  # In case you use .env.development, .env.production, etc.
+.env
+.env.*  # In case you use .env.development, .env.production, etc.
 
 # Firebase / Cloud config
 config/firebase/*.json
