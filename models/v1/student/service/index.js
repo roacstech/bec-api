@@ -1,6 +1,6 @@
-const _ = require("lodash");
-const bcrypt = require("bcryptjs");
-const moment = require("moment");
+const _ = require('lodash');
+const bcrypt = require('bcryptjs');
+const moment = require('moment');
 
 module.exports.registration = async (props) => {
   const db = global.dbConnection;
@@ -51,11 +51,11 @@ module.exports.registration = async (props) => {
 
     const currentYear = moment().year();
 
-    const checkEmailExist = await db("app_users")
+    const checkEmailExist = await db('app_users')
       .where({ authname: studentemail })
       .first();
 
-    const checkContactExist = await db("app_users")
+    const checkContactExist = await db('app_users')
       .where({ primarycontact: studentmobile })
       .first();
 
@@ -63,21 +63,21 @@ module.exports.registration = async (props) => {
       return {
         code: 200,
         status: false,
-        message: "Student email already exists",
+        message: 'Student email already exists',
       };
 
     if (checkContactExist)
       return {
         code: 200,
         status: false,
-        message: "Student contact number already exists",
+        message: 'Student contact number already exists',
       };
 
     const password = Math.floor(Math.random() * 9000 + 1000).toString();
     const hashpassword = bcrypt.hashSync(password, 10);
 
     const result = await db.transaction(async (trx) => {
-      const [studentuserid] = await trx("app_users").insert({
+      const [studentuserid] = await trx('app_users').insert({
         authname: studentemail,
         username: `${studentfirstname} ${studentlastname}`.toUpperCase(),
         password,
@@ -87,18 +87,18 @@ module.exports.registration = async (props) => {
         roleid: 3,
       });
 
-      if (!studentuserid) throw new Error("Failed to create student user");
+      if (!studentuserid) throw new Error('Failed to create student user');
 
       const userUniqueId = `BEC-${currentYear}/${String(studentuserid).padStart(
         6,
-        "0"
+        '0'
       )}`;
 
-      await trx("app_users")
+      await trx('app_users')
         .where({ userid: studentuserid })
         .update({ useruniqueid: userUniqueId });
 
-      const [insertstudentId] = await trx("students").insert({
+      const [insertstudentId] = await trx('students').insert({
         userid: studentuserid,
         adduserid: userid,
         studentfirstname,
@@ -138,20 +138,20 @@ module.exports.registration = async (props) => {
         passportexpirydate,
       });
 
-      if (!insertstudentId) throw new Error("Failed to insert student");
+      if (!insertstudentId) throw new Error('Failed to insert student');
 
       const studentUniqueId = `BEC-${currentYear}/${String(
         insertstudentId
-      ).padStart(6, "0")}`;
+      ).padStart(6, '0')}`;
 
-      await trx("students")
+      await trx('students')
         .where({ studentid: insertstudentId })
         .update({ studentuniqueid: studentUniqueId });
 
       await Promise.all(
         [
           academicdetails?.length
-            ? trx("academic_details").insert(
+            ? trx('academic_details').insert(
                 academicdetails.map((acad) => ({
                   studentid: insertstudentId,
                   ...acad,
@@ -160,7 +160,7 @@ module.exports.registration = async (props) => {
             : null,
 
           languagetest?.length
-            ? trx("language_test_details").insert(
+            ? trx('language_test_details').insert(
                 languagetest.map((lang) => ({
                   studentid: insertstudentId,
                   ...lang,
@@ -169,7 +169,7 @@ module.exports.registration = async (props) => {
             : null,
 
           interestedcourse?.length
-            ? trx("interested_course").insert(
+            ? trx('interested_course').insert(
                 interestedcourse.map((courseId) => ({
                   studentid: insertstudentId,
                   courseid: courseId,
@@ -178,7 +178,7 @@ module.exports.registration = async (props) => {
             : null,
 
           interestedcountry?.length
-            ? trx("interested_countries").insert(
+            ? trx('interested_countries').insert(
                 interestedcountry.map((countryId) => ({
                   studentid: insertstudentId,
                   countryid: countryId,
@@ -191,7 +191,7 @@ module.exports.registration = async (props) => {
       return {
         code: 200,
         status: true,
-        message: "Student created successfully",
+        message: 'Student created successfully',
         notifydata: {
           studentname: `${studentfirstname} ${studentlastname}`,
           studentuniqueid: studentUniqueId,
@@ -207,8 +207,8 @@ module.exports.registration = async (props) => {
 
     return result;
   } catch (err) {
-    console.error("Error creating student:", err);
-    return { code: 500, status: false, message: "Failed to create student" };
+    console.error('Error creating student:', err);
+    return { code: 500, status: false, message: 'Failed to create student' };
   }
 };
 
@@ -223,52 +223,52 @@ module.exports.getStudent = async (props) => {
       approvalstatus, // No default value, so we handle it dynamically
     } = props;
 
-    let query = db("students").select("*");
+    let query = db('students').select('*');
 
     // Fetch only approved students (approvalstatus = 1)
     if (approvalstatus) {
-      query = query.where("students.approvalstatus", approvalstatus);
+      query = query.where('students.approvalstatus', approvalstatus);
     }
 
-    if (studentid) query = query.where("students.studentid", studentid);
+    if (studentid) query = query.where('students.studentid', studentid);
     if (studentemail)
-      query = query.where("students.studentemail", studentemail);
+      query = query.where('students.studentemail', studentemail);
     if (studentmobile)
-      query = query.where("students.studentmobile", studentmobile);
+      query = query.where('students.studentmobile', studentmobile);
 
     const studentData = await query;
 
     if (!studentData.length) {
-      return { code: 200, status: false, message: "No students found" };
+      return { code: 200, status: false, message: 'No students found' };
     }
 
     await Promise.all(
       studentData.map(async (student) => {
-        student.academicDetails = await db("academic_details")
+        student.academicDetails = await db('academic_details')
           .leftJoin(
-            "academics",
-            "academics.academicid",
-            "academic_details.academicid"
+            'academics',
+            'academics.academicid',
+            'academic_details.academicid'
           )
           .where({ studentid: student.studentid });
 
-        student.languageTestDetails = await db("language_test_details")
+        student.languageTestDetails = await db('language_test_details')
           .leftJoin(
-            "language_tests",
-            "language_tests.languagetestid",
-            "language_test_details.languagetestid"
+            'language_tests',
+            'language_tests.languagetestid',
+            'language_test_details.languagetestid'
           )
           .where({ studentid: student.studentid });
 
-        student.interestedCourse = await db("interested_course")
-          .leftJoin("courses", "courses.courseid", "interested_course.courseid")
+        student.interestedCourse = await db('interested_course')
+          .leftJoin('courses', 'courses.courseid', 'interested_course.courseid')
           .where({ studentid: student.studentid });
 
-        student.interestedCountries = await db("interested_countries")
+        student.interestedCountries = await db('interested_countries')
           .leftJoin(
-            "countries",
-            "countries.countryid",
-            "interested_countries.countryid"
+            'countries',
+            'countries.countryid',
+            'interested_countries.countryid'
           )
           .where({ studentid: student.studentid });
       })
@@ -276,8 +276,8 @@ module.exports.getStudent = async (props) => {
 
     return { code: 200, status: true, response: studentData };
   } catch (err) {
-    console.error("Error fetching student:", err);
-    return { code: 500, status: false, message: "Failed to fetch student" };
+    console.error('Error fetching student:', err);
+    return { code: 500, status: false, message: 'Failed to fetch student' };
   }
 };
 
@@ -328,14 +328,14 @@ module.exports.editStudent = async (props) => {
       interestedcountry,
     } = props;
 
-    const studentExists = await db("students").where({ studentid }).first();
+    const studentExists = await db('students').where({ studentid }).first();
 
     if (!studentExists) {
-      return { code: 404, status: false, message: "Student not found" };
+      return { code: 404, status: false, message: 'Student not found' };
     }
 
     await db.transaction(async (trx) => {
-      await trx("students").where({ studentid }).update({
+      await trx('students').where({ studentid }).update({
         studentfirstname,
         studentlastname,
         studentdob,
@@ -373,23 +373,23 @@ module.exports.editStudent = async (props) => {
         passportexpirydate,
       });
 
-      await trx("academic_details").where({ studentid }).del();
+      await trx('academic_details').where({ studentid }).del();
       if (academicdetails?.length) {
-        await trx("academic_details").insert(
+        await trx('academic_details').insert(
           academicdetails.map((acad) => ({ studentid, ...acad }))
         );
       }
 
-      await trx("language_test_details").where({ studentid }).del();
+      await trx('language_test_details').where({ studentid }).del();
       if (languagetest?.length) {
-        await trx("language_test_details").insert(
+        await trx('language_test_details').insert(
           languagetest.map((lang) => ({ studentid, ...lang }))
         );
       }
 
-      await trx("interested_course").where({ studentid }).del();
+      await trx('interested_course').where({ studentid }).del();
       if (interestedcourse?.length) {
-        await trx("interested_course").insert(
+        await trx('interested_course').insert(
           interestedcourse.map((courseId) => ({
             studentid,
             courseid: courseId,
@@ -397,9 +397,9 @@ module.exports.editStudent = async (props) => {
         );
       }
 
-      await trx("interested_countries").where({ studentid }).del();
+      await trx('interested_countries').where({ studentid }).del();
       if (interestedcountry?.length) {
-        await trx("interested_countries").insert(
+        await trx('interested_countries').insert(
           interestedcountry.map((countryId) => ({
             studentid,
             countryid: countryId,
@@ -408,10 +408,10 @@ module.exports.editStudent = async (props) => {
       }
     });
 
-    return { code: 200, status: true, message: "Student updated successfully" };
+    return { code: 200, status: true, message: 'Student updated successfully' };
   } catch (err) {
-    console.error("Error updating student:", err);
-    return { code: 500, status: false, message: "Failed to update student" };
+    console.error('Error updating student:', err);
+    return { code: 500, status: false, message: 'Failed to update student' };
   }
 };
 
@@ -423,9 +423,9 @@ module.exports.updateApprovalStatus = async (props) => {
 
     // Define status messages
     const statusMessages = {
-      1: "Approved",
-      2: "Pending",
-      3: "Rejected",
+      1: 'Approved',
+      2: 'Pending',
+      3: 'Rejected',
     };
 
     // Validate if key is within allowed values
@@ -433,14 +433,14 @@ module.exports.updateApprovalStatus = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Invalid approval status value",
+        message: 'Invalid approval status value',
       };
     }
 
-    const student = await db("students").where({ studentid }).first();
+    const student = await db('students').where({ studentid }).first();
 
     if (!student) {
-      return { code: 404, status: false, message: "Student not found" };
+      return { code: 404, status: false, message: 'Student not found' };
     }
 
     if (student.approvalstatus === key) {
@@ -451,7 +451,7 @@ module.exports.updateApprovalStatus = async (props) => {
       };
     }
 
-    const updatedRows = await db("students")
+    const updatedRows = await db('students')
       .where({ studentid })
       .update({ approvalstatus: key });
 
@@ -459,7 +459,7 @@ module.exports.updateApprovalStatus = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Failed to update approval status",
+        message: 'Failed to update approval status',
       };
     }
 
@@ -469,8 +469,8 @@ module.exports.updateApprovalStatus = async (props) => {
       message: `Approval status updated to ${statusMessages[key]}`,
     };
   } catch (err) {
-    console.error("Error updating approval status:", err);
-    return { code: 500, status: false, message: "Internal server error" };
+    console.error('Error updating approval status:', err);
+    return { code: 500, status: false, message: 'Internal server error' };
   }
 };
 
@@ -482,9 +482,9 @@ module.exports.updateOfferLetterStatus = async (props) => {
 
     // Define status messages
     const statusMessages = {
-      1: "Approved",
-      2: "Pending",
-      3: "Rejected",
+      1: 'Approved',
+      2: 'Pending',
+      3: 'Rejected',
     };
 
     // Validate if key is within allowed values
@@ -492,17 +492,17 @@ module.exports.updateOfferLetterStatus = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Invalid approval status value",
+        message: 'Invalid approval status value',
       };
     }
 
-    const student = await db("students").where({ studentid }).first();
+    const student = await db('students').where({ studentid }).first();
 
     if (!student) {
-      return { code: 404, status: false, message: "Student not found" };
+      return { code: 404, status: false, message: 'Student not found' };
     }
 
-    const updatedRows = await db("enrollments")
+    const updatedRows = await db('enrollments')
       .where({ studentid, enrollmentid })
       .update({
         offerletterstatus: key,
@@ -513,7 +513,7 @@ module.exports.updateOfferLetterStatus = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Failed to update approval status",
+        message: 'Failed to update approval status',
       };
     }
 
@@ -523,8 +523,8 @@ module.exports.updateOfferLetterStatus = async (props) => {
       message: `Approval status updated to ${statusMessages[key]}`,
     };
   } catch (err) {
-    console.error("Error updating approval status:", err);
-    return { code: 500, status: false, message: "Internal server error" };
+    console.error('Error updating approval status:', err);
+    return { code: 500, status: false, message: 'Internal server error' };
   }
 };
 
@@ -532,21 +532,21 @@ module.exports.updateStudentStatus = async (props) => {
   const { studentid, key } = props;
   const db = global.dbConnection;
 
-  console.log("studentid received:", studentid); // Debugging Log
+  console.log('studentid received:', studentid); // Debugging Log
 
   if (!studentid) {
-    return { code: 400, status: false, message: "studentid is required" };
+    return { code: 400, status: false, message: 'studentid is required' };
   }
 
   try {
     // Check if the student exists
-    const checkStudentExist = await db("students").where({ studentid });
+    const checkStudentExist = await db('students').where({ studentid });
 
     if (_.isEmpty(checkStudentExist)) {
       return {
         code: 404,
         status: false,
-        message: "This student does not exist",
+        message: 'This student does not exist',
       };
     }
 
@@ -558,20 +558,20 @@ module.exports.updateStudentStatus = async (props) => {
       switch (key) {
         case 1: // Activate the student
           studentstatusid = 1;
-          statusMessage = "Student activated successfully";
+          statusMessage = 'Student activated successfully';
           break;
 
         case 2: // Deactivate the student
           studentstatusid = 2;
-          statusMessage = "Student deactivated successfully";
+          statusMessage = 'Student deactivated successfully';
           break;
 
         default:
-          return { code: 400, status: false, message: "Invalid status key" };
+          return { code: 400, status: false, message: 'Invalid status key' };
       }
 
       // Update `students` table
-      const updateStudent = await trx("students")
+      const updateStudent = await trx('students')
         .update({ studentstatusid })
         .where({ studentid });
 
@@ -584,14 +584,14 @@ module.exports.updateStudentStatus = async (props) => {
       }
 
       // Update `app_users.studentloginstatus`
-      const updateAppUsers = await trx("app_users")
+      const updateAppUsers = await trx('app_users')
         .update({ studentloginstatus: studentstatusid })
-        .where("userid", function () {
-          this.select("userid").from("students").where("studentid", studentid);
+        .where('userid', function () {
+          this.select('userid').from('students').where('studentid', studentid);
         });
 
       if (updateAppUsers === 0) {
-        console.warn("Warning: No matching record found in `app_users`");
+        console.warn('Warning: No matching record found in `app_users`');
       }
 
       return {
@@ -603,11 +603,11 @@ module.exports.updateStudentStatus = async (props) => {
 
     return result;
   } catch (err) {
-    console.error("Error updating student status:", err);
+    console.error('Error updating student status:', err);
     return {
       code: 500,
       status: false,
-      message: "Failed to update student status",
+      message: 'Failed to update student status',
     };
   }
 };
@@ -618,7 +618,7 @@ module.exports.selectUniversity = async (props) => {
   try {
     const { university, studentid } = props;
 
-    const checkStudent = await db("students")
+    const checkStudent = await db('students')
       .where({
         studentid,
       })
@@ -628,13 +628,13 @@ module.exports.selectUniversity = async (props) => {
       return {
         code: 200,
         status: false,
-        message: "Student not found",
+        message: 'Student not found',
       };
     }
 
     const result = await db.transaction(async (trx) => {
       for (const univer of university) {
-        const checkUniversity = await trx("universities")
+        const checkUniversity = await trx('universities')
           .where({
             universityid: univer.universityid,
           })
@@ -643,10 +643,10 @@ module.exports.selectUniversity = async (props) => {
           return {
             code: 200,
             status: false,
-            message: "University not found",
+            message: 'University not found',
           };
         }
-        const checkCourses = await trx("courses")
+        const checkCourses = await trx('courses')
           .where({
             courseid: univer.courseid,
           })
@@ -655,10 +655,10 @@ module.exports.selectUniversity = async (props) => {
           return {
             code: 200,
             status: false,
-            message: "Course not found",
+            message: 'Course not found',
           };
         }
-        const checkDepartment = await trx("departments")
+        const checkDepartment = await trx('departments')
           .where({
             departmentid: univer.departmentid,
           })
@@ -667,11 +667,11 @@ module.exports.selectUniversity = async (props) => {
           return {
             code: 200,
             status: false,
-            message: "Department not found",
+            message: 'Department not found',
           };
         }
 
-        const insertEnrollments = await trx("enrollments").insert({
+        const insertEnrollments = await trx('enrollments').insert({
           studentid,
           universityid: univer.universityid,
           courseid: univer.courseid,
@@ -679,24 +679,24 @@ module.exports.selectUniversity = async (props) => {
         });
 
         if (!insertEnrollments || insertEnrollments.length === 0) {
-          throw new Error("Failed to insert an enrollment record");
+          throw new Error('Failed to insert an enrollment record');
         }
       }
 
       return {
         code: 200,
         status: true,
-        message: "Student university selection saved successfully",
+        message: 'Student university selection saved successfully',
       };
     });
 
     return result;
   } catch (err) {
-    console.error("Error creating student:", err);
+    console.error('Error creating student:', err);
     return {
       code: 500,
       status: false,
-      message: "Failed to create student",
+      message: 'Failed to create student',
     };
   }
 };
@@ -708,62 +708,77 @@ module.exports.assignAdmin = async (props) => {
     const { adminid, studentid } = props;
 
     // Check if student exists
-    const checkStudent = await db("students").where({ studentid }).first();
+    const checkStudent = await db('students').where({ studentid }).first();
 
     if (!checkStudent) {
       return {
         code: 200,
         status: false,
-        message: "Student not found",
+        message: 'Student not found',
       };
     }
 
-    const checkAdmin = await db("admins").where({ adminid }).first();
+    const checkAdmin = await db('admins').where({ adminid }).first();
     if (!checkAdmin) {
       return {
         code: 200,
         status: false,
-        message: "Admin not found",
+        message: 'Admin not found',
       };
     }
 
     const result = await db.transaction(async (trx) => {
-      const adminAssigned = await trx("students")
+      const adminAssigned = await trx('students')
         .update({ adminid })
         .where({ studentid });
 
       if (!adminAssigned) {
-        throw new Error("Failed to assign admin to student");
+        throw new Error('Failed to assign admin to student');
       }
 
       return {
         code: 200,
         status: true,
-        message: "Admin assigned to student successfully",
+        message: 'Admin assigned to student successfully',
       };
     });
 
     return result;
   } catch (err) {
-    console.error("Error in assignAdmin:", err);
+    console.error('Error in assignAdmin:', err);
     return {
       code: 500,
       status: false,
-      message: err.message || "Failed to assign admin",
+      message: err.message || 'Failed to assign admin',
     };
   }
 };
 
 module.exports.uploadStudentChecklistFile = async (props) => {
-  const { documents,enrollmentid, studentchecklistid } = props;
+  const { documents, enrollmentid, studentchecklistid } = props;
   const db = global.dbConnection;
 
   const trx = await db.transaction();
 
   try {
+    // Get student information first
+    const studentInfo = await trx('student_checklist')
+      .select(
+        'students.studentid',
+        'students.studentfirstname',
+        'students.studentlastname'
+      )
+      .join('students', 'students.studentid', 'student_checklist.studentid')
+      .where({ studentchecklistid })
+      .first();
+
+    if (!studentInfo) {
+      throw new Error('Student checklist not found');
+    }
+
     await Promise.all(
       documents.map(async (doc) => {
-        const affectedRows = await trx("check_list_data")
+        const affectedRows = await trx('check_list_data')
           .update({
             documenturl: doc.documenturl,
             updated_at: new Date(),
@@ -771,21 +786,22 @@ module.exports.uploadStudentChecklistFile = async (props) => {
           .where({ checklistdataid: doc.checklistdataid });
 
         if (affectedRows === 0) {
-          throw new Error(`Failed to update checklistdataid ${doc.checklistdataid}`);
+          throw new Error(
+            `Failed to update checklistdataid ${doc.checklistdataid}`
+          );
         }
       })
     );
 
-    await trx("student_checklist")
+    await trx('student_checklist')
       .update({ uploadedstatus: 1 })
       .where({ studentchecklistid });
 
-      const message = `Checklist documents uploaded for Enrollment ID: ${enrollmentid}`;
-    await trx("notification").insert({
+    const message = `${studentInfo.studentfirstname} ${studentInfo.studentlastname} uploaded his documents`;
+    await trx('notification').insert({
       message,
-      // enrollmentid,
       type: 'ChecklistUpload',
-      studentid:5,
+      studentid: studentInfo.studentid,
       created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
     });
 
@@ -794,19 +810,18 @@ module.exports.uploadStudentChecklistFile = async (props) => {
     return {
       code: 200,
       status: true,
-      message: "Checklist files uploaded successfully.",
+      message: 'Checklist files uploaded successfully.',
     };
   } catch (err) {
     await trx.rollback();
-    console.error("Student File Upload Error:", err);
+    console.error('Student File Upload Error:', err);
     return {
       code: 500,
       status: false,
-      message: err.message || "Failed to upload checklist files.",
+      message: err.message || 'Failed to upload checklist files.',
     };
   }
 };
-
 
 module.exports.uploadOfferLetterChecklistFile = async (props) => {
   const {
@@ -829,22 +844,21 @@ module.exports.uploadOfferLetterChecklistFile = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Missing required fields.",
+        message: 'Missing required fields.',
       };
     }
 
-     const message = `Offer letter uploaded for Student ID :${studentid}`;
-    await trx("notification").insert({
+    const message = `Offer letter uploaded for Student ID :${studentid}`;
+    await trx('notification').insert({
       message,
       // enrollmentid,
       type: 'OfferletterUpload',
-      studentid:studentid,
+      studentid: studentid,
       created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
-      
     });
 
     // Check if a record already exists (without using 'enrollmentid')
-    const existing = await db("check_list_data")
+    const existing = await db('check_list_data')
       .where({
         studentid: studentid, // Explicitly pass the values
         checklistid: checklistid,
@@ -854,21 +868,19 @@ module.exports.uploadOfferLetterChecklistFile = async (props) => {
 
     if (existing) {
       // Update the document URL if record exists
-      await db("check_list_data")
-        .where("checklistdataid", existing.checklistdataid)
+      await db('check_list_data')
+        .where('checklistdataid', existing.checklistdataid)
         .update({ offerletterchecklisturl }); // Update the new URL column
-
-        
 
       return {
         code: 200,
         status: true,
-        message: "Offer letter checklist file updated successfully.",
+        message: 'Offer letter checklist file updated successfully.',
         checklistdataid: existing.checklistdataid,
       };
     } else {
       // Insert new record if not found
-      const [insertId] = await db("check_list_data").insert({
+      const [insertId] = await db('check_list_data').insert({
         studentid,
         checklistid,
         checklistitemid,
@@ -879,25 +891,23 @@ module.exports.uploadOfferLetterChecklistFile = async (props) => {
         return {
           code: 500,
           status: false,
-          message: "Failed to upload offer letter checklist file.",
+          message: 'Failed to upload offer letter checklist file.',
         };
       }
-      
 
       return {
         code: 200,
         status: true,
-        message: "Offer letter checklist file uploaded successfully.",
+        message: 'Offer letter checklist file uploaded successfully.',
         checklistdataid: insertId,
       };
     }
-    
   } catch (err) {
-    console.error("Offer Letter File Upload Error:", err);
+    console.error('Offer Letter File Upload Error:', err);
     return {
       code: 500,
       status: false,
-      message: "Server error while uploading offer letter checklist file.",
+      message: 'Server error while uploading offer letter checklist file.',
       error: err.message,
     };
   }
@@ -919,43 +929,42 @@ module.exports.uploadPaymentReceiptFile = async (props) => {
       return {
         code: 400,
         status: false,
-        message: "Missing required fields.",
+        message: 'Missing required fields.',
       };
     }
 
     // Check if a record already exists (without using 'enrollmentid')
-    const existing = await db("check_list_data")
+    const existing = await db('check_list_data')
       .where({
         studentid: studentid, // Explicitly pass the values
         checklistid: checklistid,
         checklistitemid: checklistitemid,
       })
       .first();
-      
-   const message = `Payment Receipt uploaded for Student ID : ${studentid}`;
-    await trx("notification").insert({
+
+    const message = `Payment Receipt uploaded for Student ID : ${studentid}`;
+    await trx('notification').insert({
       message,
       // enrollmentid,
       type: 'paymentreceiptUpload',
-      studentid:studentid,
+      studentid: studentid,
       created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
-      
     });
     if (existing) {
       // Update the payment receipt URL if the record exists
-      await db("check_list_data")
-        .where("checklistdataid", existing.checklistdataid)
+      await db('check_list_data')
+        .where('checklistdataid', existing.checklistdataid)
         .update({ receipturl }); // Update the payment receipt URL column
 
       return {
         code: 200,
         status: true,
-        message: "Payment receipt file updated successfully.",
+        message: 'Payment receipt file updated successfully.',
         checklistdataid: existing.checklistdataid,
       };
     } else {
       // Insert new record if not found
-      const [insertId] = await db("check_list_data").insert({
+      const [insertId] = await db('check_list_data').insert({
         studentid,
         checklistid,
         checklistitemid,
@@ -966,24 +975,23 @@ module.exports.uploadPaymentReceiptFile = async (props) => {
         return {
           code: 500,
           status: false,
-          message: "Failed to upload payment receipt file.",
+          message: 'Failed to upload payment receipt file.',
         };
       }
 
       return {
         code: 200,
         status: true,
-        message: "Payment receipt file uploaded successfully.",
+        message: 'Payment receipt file uploaded successfully.',
         checklistdataid: insertId,
       };
     }
-    
   } catch (err) {
-    console.error("Payment Receipt File Upload Error:", err);
+    console.error('Payment Receipt File Upload Error:', err);
     return {
       code: 500,
       status: false,
-      message: "Server error while uploading payment receipt file.",
+      message: 'Server error while uploading payment receipt file.',
       error: err.message,
     };
   }
@@ -1000,26 +1008,25 @@ module.exports.uploadCoEFile = async (props) => {
   const db = global.dbConnection;
 
   try {
-       const message = `COE letter uploaded for Student ID :${studentid}`;
-    await trx("notification").insert({
+    const message = `COE letter uploaded for Student ID :${studentid}`;
+    await trx('notification').insert({
       message,
       // enrollmentid,
       type: 'COEUpload',
-      studentid:studentid,
+      studentid: studentid,
       created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
-      
     });
     // Validate if all required fields are present
     if (!studentid || !checklistid || !checklistitemid || !coeurl) {
       return {
         code: 400,
         status: false,
-        message: "Missing required fields.",
+        message: 'Missing required fields.',
       };
     }
 
     // Log values for debugging
-    console.log("Inserting/updating with:", {
+    console.log('Inserting/updating with:', {
       studentid,
       checklistid,
       checklistitemid,
@@ -1027,7 +1034,7 @@ module.exports.uploadCoEFile = async (props) => {
     });
 
     // Check if the record already exists in the database
-    const existing = await db("check_list_data")
+    const existing = await db('check_list_data')
       .where({
         studentid,
         checklistid,
@@ -1037,19 +1044,19 @@ module.exports.uploadCoEFile = async (props) => {
 
     if (existing) {
       // If the record exists, update the CoE file URL
-      await db("check_list_data")
-        .where("checklistdataid", existing.checklistdataid)
+      await db('check_list_data')
+        .where('checklistdataid', existing.checklistdataid)
         .update({ coeurl });
 
       return {
         code: 200,
         status: true,
-        message: "CoE file URL updated successfully.",
+        message: 'CoE file URL updated successfully.',
         checklistdataid: existing.checklistdataid,
       };
     } else {
       // If no record exists, insert a new record
-      const [insertId] = await db("check_list_data").insert({
+      const [insertId] = await db('check_list_data').insert({
         studentid,
         checklistid,
         checklistitemid,
@@ -1060,23 +1067,23 @@ module.exports.uploadCoEFile = async (props) => {
         return {
           code: 500,
           status: false,
-          message: "Failed to upload CoE file.",
+          message: 'Failed to upload CoE file.',
         };
       }
 
       return {
         code: 200,
         status: true,
-        message: "CoE file uploaded successfully.",
+        message: 'CoE file uploaded successfully.',
         checklistdataid: insertId,
       };
     }
   } catch (err) {
-    console.error("CoE File Upload Error:", err);
+    console.error('CoE File Upload Error:', err);
     return {
       code: 500,
       status: false,
-      message: "Server error while uploading CoE file.",
+      message: 'Server error while uploading CoE file.',
       error: err.message,
     };
   }
@@ -1093,26 +1100,25 @@ module.exports.uploadVisaChecklistFile = async (props) => {
   const db = global.dbConnection;
 
   try {
-       const message = `Visa check list uploaded for Student ID :${studentid}`;
-    await trx("notification").insert({
+    const message = `Visa check list uploaded for Student ID :${studentid}`;
+    await trx('notification').insert({
       message,
       // enrollmentid,
       type: 'visachecklistUpload',
-      studentid:studentid,
+      studentid: studentid,
       created_at: moment().format('YYYY-MM-DD HH:mm:ss'),
-      
     });
     // Validate if all required fields are present
     if (!studentid || !checklistid || !checklistitemid || !visaurl) {
       return {
         code: 400,
         status: false,
-        message: "Missing required fields.",
+        message: 'Missing required fields.',
       };
     }
 
     // Log values for debugging
-    console.log("Inserting/updating with:", {
+    console.log('Inserting/updating with:', {
       studentid,
       checklistid,
       checklistitemid,
@@ -1120,7 +1126,7 @@ module.exports.uploadVisaChecklistFile = async (props) => {
     });
 
     // Check if the record already exists in the database
-    const existing = await db("check_list_data")
+    const existing = await db('check_list_data')
       .where({
         studentid,
         checklistid,
@@ -1130,19 +1136,19 @@ module.exports.uploadVisaChecklistFile = async (props) => {
 
     if (existing) {
       // If the record exists, update the Visa URL
-      await db("check_list_data")
-        .where("checklistdataid", existing.checklistdataid)
+      await db('check_list_data')
+        .where('checklistdataid', existing.checklistdataid)
         .update({ visaurl });
 
       return {
         code: 200,
         status: true,
-        message: "Visa checklist URL updated successfully.",
+        message: 'Visa checklist URL updated successfully.',
         checklistdataid: existing.checklistdataid,
       };
     } else {
       // If no record exists, insert a new record
-      const [insertId] = await db("check_list_data").insert({
+      const [insertId] = await db('check_list_data').insert({
         studentid,
         checklistid,
         checklistitemid,
@@ -1153,23 +1159,23 @@ module.exports.uploadVisaChecklistFile = async (props) => {
         return {
           code: 500,
           status: false,
-          message: "Failed to upload Visa checklist.",
+          message: 'Failed to upload Visa checklist.',
         };
       }
 
       return {
         code: 200,
         status: true,
-        message: "Visa checklist uploaded successfully.",
+        message: 'Visa checklist uploaded successfully.',
         checklistdataid: insertId,
       };
     }
   } catch (err) {
-    console.error("Visa Checklist Upload Error:", err);
+    console.error('Visa Checklist Upload Error:', err);
     return {
       code: 500,
       status: false,
-      message: "Server error while uploading Visa checklist.",
+      message: 'Server error while uploading Visa checklist.',
       error: err.message,
     };
   }
