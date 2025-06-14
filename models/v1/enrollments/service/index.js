@@ -269,6 +269,7 @@ module.exports.getEnrollmentsCount = async (props) => {
       }, {});
 
       // Query with filters, without ORDER BY
+      
       let enrollQuery = trx("enrollments")
         .join(
           "enrollmentstatus",
